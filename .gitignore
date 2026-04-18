@@ -23,6 +23,12 @@ Thumbs.db
 # Logs
 *.log
 
+# PHPUnit
+php-auth-app/.phpunit.result.cache
+
+# Test keys (generated locally from keys/)
+java-api-app/src/test/resources/private.pem
+
 # Temp
 *.zip
 *.tmp

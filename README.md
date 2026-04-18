@@ -96,42 +96,212 @@ mvn clean package
 
 The Java app will be available at `http://localhost:8081/java-api-app/api/`.
 
-## API Usage
+## Authentication Flow
 
-### Register a user (PHP App)
+```
+┌────────┐     1. POST /register          ┌───────────────┐     ┌───────────┐
+│ Client │ ────────────────────▶ │ PHP Auth App  │ ───▶ │  auth_db  │
+│        │     {email,password,name}  │ (port 8080)   │     │ (Postgres)│
+└────────┘                            └───────────────┘     └───────────┘
+    │                                    │
+    │  2. POST /login                    │
+    │     {email,password}               │
+    │────────────────────────────────▶│
+    │                                    │
+    │  3. Response: {token: "eyJ..."}     │
+    │◀────────────────────────────────│
+    │
+    │  4. GET /api/products              ┌───────────────┐     ┌───────────┐
+    │     Authorization: Bearer eyJ...   │ Java API App │ ───▶ │  app_db   │
+    │───────────────────────────────▶│ (port 8081)   │     │ (Postgres)│
+    │                                   │               │     └───────────┘
+    │  5. JWT validated via RSA public   │  Struts 2     │
+    │     key → request authorized      │  Interceptor  │
+    │                                   │  validates JWT│
+    │  6. Response: {products: [...]}    │               │
+    │◀───────────────────────────────│               │
+                                        └───────────────┘
+```
 
+**Key points:**
+- The PHP app is the **sole issuer** of JWT tokens (signs with RSA private key).
+- The Java app **never** sees the private key — it only needs the public key to verify.
+- Tokens are stateless; no session sharing or inter-service calls between the apps.
+- The `created_by` field on products is automatically set from the JWT `sub` claim.
+
+## API Reference
+
+### PHP Auth App — `http://localhost:8080`
+
+All responses are `Content-Type: application/json`.
+
+---
+
+#### `POST /register`
+
+Create a new user account.
+
+**Request:**
 ```bash
 curl -X POST http://localhost:8080/register ^
   -H "Content-Type: application/json" ^
   -d "{\"email\": \"user@example.com\", \"password\": \"secret123\", \"name\": \"John Doe\"}"
 ```
 
-### Login and get a JWT (PHP App)
+**Request body:**
+```json
+{
+  "email": "user@example.com",
+  "password": "secret123",
+  "name": "John Doe"
+}
+```
 
+**Success response** (`201 Created`):
+```json
+{
+  "message": "User registered successfully",
+  "user": {
+    "id": 1,
+    "email": "user@example.com",
+    "name": "John Doe"
+  }
+}
+```
+
+**Error responses:**
+- `400` — Missing required fields: `{"error": "email, password, and name are required"}`
+- `409` — Duplicate email: `{"error": "Email already registered"}`
+
+---
+
+#### `POST /login`
+
+Authenticate and receive a JWT token.
+
+**Request:**
 ```bash
 curl -X POST http://localhost:8080/login ^
   -H "Content-Type: application/json" ^
   -d "{\"email\": \"user@example.com\", \"password\": \"secret123\"}"
 ```
 
-Response:
-
+**Request body:**
 ```json
 {
-  "message": "Login successful",
-  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJS...",
-  "user": { "id": 1, "email": "user@example.com", "name": "John Doe" }
+  "email": "user@example.com",
+  "password": "secret123"
 }
 ```
 
-### Get current user profile (PHP App)
-
-```bash
-curl http://localhost:8080/me -H "Authorization: Bearer YOUR_TOKEN"
+**Success response** (`200 OK`):
+```json
+{
+  "message": "Login successful",
+  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...",
+  "user": {
+    "id": 1,
+    "email": "user@example.com",
+    "name": "John Doe"
+  }
+}
 ```
 
-### Create a product (Java App — requires JWT)
+The `token` field contains the JWT to use with both PHP and Java endpoints. It expires after **1 hour**.
 
+**Error responses:**
+- `400` — Missing fields: `{"error": "email and password are required"}`
+- `401` — Bad credentials: `{"error": "Invalid email or password"}`
+
+---
+
+#### `GET /me`
+
+Get the authenticated user's profile. Requires a valid JWT.
+
+**Request:**
+```bash
+curl http://localhost:8080/me ^
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+**Success response** (`200 OK`):
+```json
+{
+  "user": {
+    "id": 1,
+    "email": "user@example.com",
+    "name": "John Doe",
+    "created_at": "2026-04-18 11:40:51.131905"
+  }
+}
+```
+
+**Error responses:**
+- `401` — Missing token: `{"error": "Authorization header with Bearer token required"}`
+- `401` — Invalid/expired token: `{"error": "Invalid token: ..."}`
+- `404` — User deleted: `{"error": "User not found"}`
+
+---
+
+### Java API App — `http://localhost:8081/java-api-app/api`
+
+All endpoints require a valid JWT in the `Authorization: Bearer <token>` header. The token must have been issued by the PHP Auth App. All responses are `Content-Type: application/json`.
+
+**Common error response** (`401 Unauthorized`) — returned by the JWT interceptor before the action executes:
+```json
+{"error": "Authorization header with Bearer token required"}
+```
+or:
+```json
+{"error": "Invalid or expired token: <details>"}
+```
+
+---
+
+#### `GET /api/products`
+
+List all products, ordered by creation date (newest first).
+
+**Request:**
+```bash
+curl http://localhost:8081/java-api-app/api/products ^
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+**Success response** (`200 OK`):
+```json
+{
+  "products": [
+    {
+      "id": 2,
+      "name": "Laptop",
+      "description": "High-end laptop",
+      "price": 999.99,
+      "created_by": "1",
+      "created_at": "2026-04-18 11:40:52.294426"
+    },
+    {
+      "id": 1,
+      "name": "Widget",
+      "description": "A nice widget",
+      "price": 19.99,
+      "created_by": "1",
+      "created_at": "2026-04-17 13:27:10.742341"
+    }
+  ]
+}
+```
+
+The `created_by` field contains the user ID extracted from the JWT `sub` claim of the user who created the product.
+
+---
+
+#### `POST /api/products-create`
+
+Create a new product. The `created_by` field is automatically set from the JWT.
+
+**Request:**
 ```bash
 curl -X POST http://localhost:8081/java-api-app/api/products-create ^
   -H "Content-Type: application/json" ^
@@ -139,19 +309,84 @@ curl -X POST http://localhost:8081/java-api-app/api/products-create ^
   -d "{\"name\": \"Widget\", \"description\": \"A nice widget\", \"price\": 19.99}"
 ```
 
-### List products (Java App — requires JWT)
-
-```bash
-curl http://localhost:8081/java-api-app/api/products ^
-  -H "Authorization: Bearer YOUR_TOKEN"
+**Request body:**
+```json
+{
+  "name": "Widget",
+  "description": "A nice widget",
+  "price": 19.99
+}
 ```
 
-### Get a single product (Java App — requires JWT)
+`name` and `price` are required. `description` is optional (defaults to empty string).
 
+**Success response** (`201 Created`):
+```json
+{
+  "message": "Product created successfully",
+  "product": {
+    "id": 1,
+    "name": "Widget",
+    "description": "A nice widget",
+    "price": 19.99,
+    "created_by": "1",
+    "created_at": "2026-04-17 13:27:10.742341"
+  }
+}
+```
+
+**Error responses:**
+- `400` — Missing fields: `{"error": "name and price are required"}`
+- `500` — Database error: `{"error": "Database error: ..."}`
+
+---
+
+#### `GET /api/products-get?id={id}`
+
+Get a single product by its ID.
+
+**Request:**
 ```bash
 curl "http://localhost:8081/java-api-app/api/products-get?id=1" ^
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
+
+**Success response** (`200 OK`):
+```json
+{
+  "product": {
+    "id": 1,
+    "name": "Widget",
+    "description": "A nice widget",
+    "price": 19.99,
+    "created_by": "1",
+    "created_at": "2026-04-17 13:27:10.742341"
+  }
+}
+```
+
+**Error responses:**
+- `404` — Not found: `{"error": "Product not found"}`
+- `404` — Invalid ID: `{"error": "Valid product id is required"}`
+
+---
+
+### Database Schemas
+
+**`auth_db.users`** (PHP Auth App):
+- `id` — SERIAL PRIMARY KEY
+- `email` — VARCHAR(255), UNIQUE, NOT NULL
+- `password_hash` — VARCHAR(255), NOT NULL (bcrypt)
+- `name` — VARCHAR(255), NOT NULL
+- `created_at` — TIMESTAMP, defaults to now
+
+**`app_db.products`** (Java API App):
+- `id` — SERIAL PRIMARY KEY
+- `name` — VARCHAR(255), NOT NULL
+- `description` — TEXT, defaults to empty string
+- `price` — DECIMAL(10,2), NOT NULL
+- `created_by` — VARCHAR(50), NOT NULL (user ID from JWT `sub`)
+- `created_at` — TIMESTAMP, defaults to now
 
 ## Project Structure
 
