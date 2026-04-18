@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.5//EN"
+    "http://struts.apache.org/dtds/struts-2.5.dtd">
+
+<struts>
+    <constant name="struts.devMode" value="false"/>
+    <constant name="struts.action.extension" value=",,"/>
+    <constant name="struts.mapper.alwaysSelectFullNamespace" value="false"/>
+    <constant name="struts.enable.SlashesInActionNames" value="true"/>
+
+    <package name="api" namespace="/api" extends="json-default">
+
+        <!-- Custom interceptor stack with JWT validation -->
+        <interceptors>
+            <interceptor name="jwtAuth" class="com.app.interceptor.JwtInterceptor"/>
+            <interceptor-stack name="jwtStack">
+                <interceptor-ref name="jwtAuth"/>
+                <interceptor-ref name="defaultStack"/>
+            </interceptor-stack>
+        </interceptors>
+
+        <default-interceptor-ref name="jwtStack"/>
+
+        <!-- Global results for auth failures -->
+        <global-results>
+            <result name="unauthorized" type="json">
+                <param name="statusCode">401</param>
+            </result>
+        </global-results>
+
+        <!-- Product Actions -->
+        <action name="products" class="com.app.action.ProductAction" method="list">
+            <result name="success" type="json">
+                <param name="root">responseData</param>
+            </result>
+            <result name="error" type="json">
+                <param name="root">responseData</param>
+                <param name="statusCode">500</param>
+            </result>
+        </action>
+
+        <action name="products-create" class="com.app.action.ProductAction" method="create">
+            <result name="success" type="json">
+                <param name="root">responseData</param>
+                <param name="statusCode">201</param>
+            </result>
+            <result name="error" type="json">
+                <param name="root">responseData</param>
+                <param name="statusCode">400</param>
+            </result>
+        </action>
+
+        <action name="products-get" class="com.app.action.ProductAction" method="get">
+            <result name="success" type="json">
+                <param name="root">responseData</param>
+            </result>
+            <result name="notFound" type="json">
+                <param name="root">responseData</param>
+                <param name="statusCode">404</param>
+            </result>
+        </action>
+    </package>
+</struts>

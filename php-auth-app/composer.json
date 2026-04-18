@@ -1,0 +1,16 @@
+{
+    "name": "auth/php-auth-app",
+    "description": "Pure PHP JWT Authentication Application",
+    "type": "project",
+    "require": {
+        "php": ">=8.1",
+        "firebase/php-jwt": "^7.0",
+        "ext-pdo": "*",
+        "ext-pdo_pgsql": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    }
+}

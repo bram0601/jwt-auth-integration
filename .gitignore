@@ -1,0 +1,28 @@
+# PHP
+php-auth-app/vendor/
+composer.lock
+
+# Java / Maven
+java-api-app/target/
+
+# RSA keys (sensitive - generate locally)
+keys/*.pem
+
+# IDE
+.idea/
+.vscode/
+*.iml
+.project
+.classpath
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temp
+*.zip
+*.tmp
