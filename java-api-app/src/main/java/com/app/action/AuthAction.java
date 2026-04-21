@@ -106,7 +106,16 @@ public class AuthAction extends ActionSupport {
                 stmt.setString(1, email.trim());
                 ResultSet rs = stmt.executeQuery();
 
-                if (rs.next() && BCrypt.checkpw(password, rs.getString("password_hash"))) {
+                if (rs.next()) {
+                    // PHP uses $2y$ prefix, jBCrypt expects $2a$ — they are identical
+                    String storedHash = rs.getString("password_hash");
+                    if (storedHash.startsWith("$2y$")) {
+                        storedHash = "$2a$" + storedHash.substring(4);
+                    }
+                    if (!BCrypt.checkpw(password, storedHash)) {
+                        responseData.put("error", "Invalid email or password");
+                        return "unauthorized";
+                    }
                     int userId = rs.getInt("id");
                     String userEmail = rs.getString("email");
                     String userName = rs.getString("name");
