@@ -12,7 +12,7 @@ class AuthController
 
     public function __construct()
     {
-        $this->db  = Database::getConnection();
+        $this->db  = Database::getAuthConnection();
         $this->jwt = new JwtService();
     }
 
