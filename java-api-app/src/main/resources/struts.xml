@@ -9,6 +9,53 @@
     <constant name="struts.mapper.alwaysSelectFullNamespace" value="false"/>
     <constant name="struts.enable.SlashesInActionNames" value="true"/>
 
+    <!-- Auth endpoints - NO JWT interceptor (public) -->
+    <package name="auth" namespace="/auth" extends="json-default">
+        <action name="register" class="com.app.action.AuthAction" method="register">
+            <result name="success" type="json">
+                <param name="root">responseData</param>
+                <param name="statusCode">201</param>
+            </result>
+            <result name="error" type="json">
+                <param name="root">responseData</param>
+                <param name="statusCode">400</param>
+            </result>
+            <result name="conflict" type="json">
+                <param name="root">responseData</param>
+                <param name="statusCode">409</param>
+            </result>
+        </action>
+
+        <action name="login" class="com.app.action.AuthAction" method="login">
+            <result name="success" type="json">
+                <param name="root">responseData</param>
+            </result>
+            <result name="error" type="json">
+                <param name="root">responseData</param>
+                <param name="statusCode">400</param>
+            </result>
+            <result name="unauthorized" type="json">
+                <param name="root">responseData</param>
+                <param name="statusCode">401</param>
+            </result>
+        </action>
+
+        <action name="me" class="com.app.action.AuthAction" method="me">
+            <result name="success" type="json">
+                <param name="root">responseData</param>
+            </result>
+            <result name="unauthorized" type="json">
+                <param name="root">responseData</param>
+                <param name="statusCode">401</param>
+            </result>
+            <result name="notFound" type="json">
+                <param name="root">responseData</param>
+                <param name="statusCode">404</param>
+            </result>
+        </action>
+    </package>
+
+    <!-- Product API endpoints - JWT protected -->
     <package name="api" namespace="/api" extends="json-default">
 
         <!-- Custom interceptor stack with JWT validation -->

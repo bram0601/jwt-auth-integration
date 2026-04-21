@@ -30,7 +30,6 @@ public class JwtService {
     public Claims validateToken(String token) {
         return Jwts.parser()
                 .verifyWith(publicKey)
-                .requireIssuer("php-auth-app")
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();

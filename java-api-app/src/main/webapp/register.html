@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - JWT Auth (Java)</title>
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+    <div class="navbar">
+        <a href="login.html" class="brand">JWT Auth <span>Java &bull; Struts 2</span></a>
+    </div>
+    <div class="center-card">
+        <div class="card">
+            <h2>Create Account</h2>
+            <p class="subtitle">Register via the Java Struts 2 authentication server.</p>
+            <div id="alert" class="alert"></div>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" placeholder="John Doe" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" placeholder="you@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Choose a password" required minlength="6">
+                </div>
+                <button type="submit" class="btn btn-primary" id="submitBtn">Create Account</button>
+            </form>
+            <p class="text-center mt-1">
+                Already have an account? <a href="login.html" class="text-link">Sign in</a>
+            </p>
+        </div>
+    </div>
+    <script src="assets/auth.js"></script>
+    <script>
+        if (getToken()) window.location.href = 'dashboard.html';
+
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideAlert('alert');
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true; btn.textContent = 'Creating account...';
+            try {
+                await apiCall('POST', 'auth/register', {
+                    name: document.getElementById('name').value,
+                    email: document.getElementById('email').value,
+                    password: document.getElementById('password').value
+                });
+                showAlert('alert', 'Account created! Redirecting to login...', 'success');
+                setTimeout(() => window.location.href = 'login.html', 1500);
+            } catch (err) {
+                showAlert('alert', err.error || 'Registration failed', 'error');
+                btn.disabled = false; btn.textContent = 'Create Account';
+            }
+        });
+    </script>
+</body>
+</html>

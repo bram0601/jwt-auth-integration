@@ -3,31 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JWT Auth - Java</title>
-    <script>window.location.href = 'login.html';</script>
+    <title>Products - JWT Auth (PHP)</title>
+    <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
     <div class="navbar">
-        <a href="." class="brand">JWT Auth <span>Integration</span></a>
+        <a href="/" class="brand">JWT Auth <span>PHP &bull; Products</span></a>
         <nav>
-            <a href="http://localhost:8080/dashboard" id="nav-dashboard">Dashboard</a>
-            <a href="." class="active">Products</a>
+            <a href="#" onclick="navigateToDashboard(); return false;">Dashboard (Java)</a>
+            <a href="/" class="active">Products</a>
             <a href="#" onclick="doLogout(); return false;" class="logout">Logout</a>
         </nav>
     </div>
-
     <div class="container">
         <div class="card">
             <div class="products-header">
                 <h2>Products</h2>
                 <button class="btn btn-success btn-sm" onclick="openCreateModal()">+ New Product</button>
             </div>
-
             <div id="alert" class="alert"></div>
-
-            <div id="productList">
-                <div class="empty-state">Loading products...</div>
-            </div>
+            <div id="productList"><div class="empty-state">Loading products...</div></div>
         </div>
     </div>
 
@@ -50,13 +45,13 @@
                     <input type="number" id="prodPrice" step="0.01" min="0.01" placeholder="0.00" required>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-sm" onclick="closeCreateModal()" style="background:#e2e8f0; color:#1e293b;">Cancel</button>
+                    <button type="button" class="btn btn-sm" onclick="closeCreateModal()" style="background:#e2e8f0;color:#1e293b;">Cancel</button>
                     <button type="submit" class="btn btn-success btn-sm" id="createBtn">Create Product</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <script src="assets/app.js"></script>
+    <script src="/assets/app.js"></script>
 </body>
 </html>

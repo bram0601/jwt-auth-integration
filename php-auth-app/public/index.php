@@ -12,29 +12,12 @@ if (preg_match('/^\/(assets)\//', $uri)) {
     return false; // Let PHP built-in server handle static files
 }
 
-// HTML page routes (GET requests serve HTML views)
-if ($method === 'GET') {
+// HTML page routes
+if ($method === 'GET' && !str_starts_with($uri, '/api/')) {
     switch ($uri) {
         case '/':
-            readfile(__DIR__ . '/views/login.html');
+            readfile(__DIR__ . '/views/products.html');
             exit;
-        case '/register':
-            readfile(__DIR__ . '/views/register.html');
-            exit;
-        case '/dashboard':
-            readfile(__DIR__ . '/views/dashboard.html');
-            exit;
-        case '/logout':
-            // Serve a simple page that clears localStorage and redirects
-            echo '<!DOCTYPE html><html><body><script>
-                localStorage.removeItem("jwt_token");
-                localStorage.removeItem("jwt_user");
-                window.location.href = "/";
-            </script></body></html>';
-            exit;
-        case '/me':
-            // GET /me is an API endpoint — fall through to JSON handler
-            break;
         default:
             break;
     }
@@ -43,19 +26,34 @@ if ($method === 'GET') {
 // JSON API routes
 header('Content-Type: application/json');
 
-$controller = new \App\AuthController();
+$productController = new \App\ProductController();
+$authController    = new \App\AuthController();
 
 switch (true) {
+    // Product API (JWT protected — validated inside ProductController)
+    case $method === 'GET' && $uri === '/api/products' && !isset($_GET['id']):
+        $productController->list();
+        break;
+
+    case $method === 'GET' && $uri === '/api/products' && isset($_GET['id']):
+        $productController->get();
+        break;
+
+    case $method === 'POST' && $uri === '/api/products':
+        $productController->create();
+        break;
+
+    // Legacy auth API (still available)
     case $method === 'POST' && $uri === '/register':
-        $controller->register();
+        $authController->register();
         break;
 
     case $method === 'POST' && $uri === '/login':
-        $controller->login();
+        $authController->login();
         break;
 
     case $method === 'GET' && $uri === '/me':
-        $controller->me();
+        $authController->me();
         break;
 
     default:
