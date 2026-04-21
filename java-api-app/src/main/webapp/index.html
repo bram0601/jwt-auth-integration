@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products - JWT Auth</title>
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+    <div class="navbar">
+        <a href="." class="brand">JWT Auth <span>Integration</span></a>
+        <nav>
+            <a href="http://localhost:8080/dashboard" id="nav-dashboard">Dashboard</a>
+            <a href="." class="active">Products</a>
+            <a href="#" onclick="doLogout(); return false;" class="logout">Logout</a>
+        </nav>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <div class="products-header">
+                <h2>Products</h2>
+                <button class="btn btn-success btn-sm" onclick="openCreateModal()">+ New Product</button>
+            </div>
+
+            <div id="alert" class="alert"></div>
+
+            <div id="productList">
+                <div class="empty-state">Loading products...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Product Modal -->
+    <div class="modal-overlay" id="createModal">
+        <div class="modal">
+            <h3>Create Product</h3>
+            <div id="modalAlert" class="alert"></div>
+            <form id="createForm">
+                <div class="form-group">
+                    <label for="prodName">Product Name</label>
+                    <input type="text" id="prodName" placeholder="e.g. Laptop" required>
+                </div>
+                <div class="form-group">
+                    <label for="prodDesc">Description</label>
+                    <textarea id="prodDesc" rows="3" placeholder="Product description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="prodPrice">Price ($)</label>
+                    <input type="number" id="prodPrice" step="0.01" min="0.01" placeholder="0.00" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-sm" onclick="closeCreateModal()" style="background:#e2e8f0; color:#1e293b;">Cancel</button>
+                    <button type="submit" class="btn btn-success btn-sm" id="createBtn">Create Product</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="assets/app.js"></script>
+</body>
+</html>

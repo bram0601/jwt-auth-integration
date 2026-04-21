@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - JWT Auth</title>
+    <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+    <div class="navbar">
+        <a href="/dashboard" class="brand">JWT Auth <span>Integration</span></a>
+        <nav>
+            <a href="/dashboard" class="active">Dashboard</a>
+            <a href="#" onclick="navigateToProducts(); return false;">Products</a>
+            <a href="#" onclick="logout(); return false;" class="logout">Logout</a>
+        </nav>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>Welcome, <span id="userName">User</span></h2>
+            <p class="subtitle">Your profile information from the authentication server.</p>
+
+            <div id="alert" class="alert"></div>
+
+            <dl class="profile-grid" id="profileData">
+                <dt>Loading...</dt>
+                <dd></dd>
+            </dl>
+        </div>
+
+        <div class="card" style="margin-top: 1.5rem;">
+            <h2>Quick Actions</h2>
+            <p class="subtitle">Navigate between the integrated applications.</p>
+            <div style="display: flex; gap: 12px; margin-top: 1rem;">
+                <a href="#" onclick="navigateToProducts(); return false;" class="btn btn-primary" style="width: auto;">
+                    View Products (Java App)
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="/assets/auth.js"></script>
+    <script>
+        checkHashToken();
+        if (!requireAuth()) { /* redirects to login */ }
+
+        (async function loadProfile() {
+            try {
+                const data = await apiCall('GET', '/me');
+                const user = data.user;
+                setUser(user);
+                document.getElementById('userName').textContent = user.name;
+                document.getElementById('profileData').innerHTML = `
+                    <dt>ID</dt><dd>${user.id}</dd>
+                    <dt>Name</dt><dd>${user.name}</dd>
+                    <dt>Email</dt><dd>${user.email}</dd>
+                    <dt>Member since</dt><dd>${new Date(user.created_at).toLocaleDateString()}</dd>
+                `;
+            } catch (err) {
+                if (err.status === 401) {
+                    clearAuth();
+                    window.location.href = '/';
+                } else {
+                    showAlert('alert', err.error || 'Failed to load profile', 'error');
+                }
+            }
+        })();
+    </script>
+</body>
+</html>
